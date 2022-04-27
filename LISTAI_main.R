@@ -14,9 +14,25 @@ library(rTensor)
 library(softImpute)
 library(glmnet)
 
-# perform the nested double ADMM algorithm
+# main function for nested double ADMM algorithm
+#### Input: 
+# tnsr: order three tensor dataset with missing entries as 0
+# omega: order 3 binary array indicating which entry is observed (1) or missing (0)
+# A_true, B_true, C_true: auxiliary information matrices along three modes
+# lambda1: tuning parameter for sparsity on core tensor G
+# lambda2: tuning parameter for low rank constrain
+# beta1: lagrangian multiplier for outer ADMM loop
+# rho: proximal parameter when performing linearization to update G
+# tau: proximal parameter when performing linearization to update E
+# eta: lagrangian multiplier for inner ADMM loop
+#### Output:
+# G: estimated core tensor
+# E: estimated underlying tensor
+# C: estimated [G;X,Y,Z] - E
+# err: MSE on training dataset (||E - tnsr||_F^2/|Omega|)
+
 nested_double_admm <- function(tnsr,omega, A_true,B_true,C_true,
-                               lambda1, lambda2, beta1, rho = 2, tau, eta, max_iter = 100, tol = 1e-4){
+                               lambda1, lambda2, beta1, rho, tau, eta, max_iter = 100, tol = 1e-4){
   n1 = tnsr@modes[1];n2 = tnsr@modes[2];n3 = tnsr@modes[3];
   A_true = cbind(A_true, rep(1, nrow(A_true)))
   B_true = cbind(B_true, rep(1, nrow(B_true)))
@@ -41,7 +57,7 @@ nested_double_admm <- function(tnsr,omega, A_true,B_true,C_true,
     if (iter > 1){
       if(abs(fval_train[iter] - fval_train[iter-1])/fval_train[iter-1] < tol){break}
     }
-    print(paste('iter:', iter, 'err', fval_train[iter]))
+    message(paste(iter,"-th  iteration -- MSE value is", fval_train[iter]," -----------------"))
     iter = iter+1
   }
   return(list(G = G,
@@ -140,5 +156,3 @@ M2_update <- function(tnsr_obs, A_true, B_true, C_true, M2_old, beta1, E){
   M1 <- M2_old + beta1 * (omega*E - tnsr_obs)
   return(M1)
 }
-
-

@@ -141,5 +141,4 @@ M2_update <- function(tnsr_obs, A_true, B_true, C_true, M2_old, beta1, E){
   return(M1)
 }
 
-# Step 5: main function for nested double admm algorithm
 
